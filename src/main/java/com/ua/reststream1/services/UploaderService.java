@@ -37,13 +37,17 @@ public class UploaderService {
 
                 if (Storage.files.containsValue(fileContent)) {
                     return ResponseEntity
-                            .status(HttpStatus.OK)
+                            .status(HttpStatus.NOT_ACCEPTABLE)
                             .body("File is already uploaded on server");
                 }
                 Storage.files.put(localName, fileContent);
                 return ResponseEntity
                         .status(HttpStatus.OK)
                         .body("Successfully uploaded file on server under name: " + localName);
+            } catch (IllegalStateException | IllegalArgumentException exception) {
+                return ResponseEntity
+                        .status(HttpStatus.BAD_REQUEST)
+                        .body(exception.getMessage());
             } catch (IOException exception) {
                 return ResponseEntity
                         .status(HttpStatus.BAD_REQUEST)
@@ -57,8 +61,7 @@ public class UploaderService {
             return ResponseEntity
                     .status(HttpStatus.OK)
                     .body(Storage.files.get(fileName).getOriginalContent());
-        }
-        else {
+        } else {
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
                     .body("There is no file with such name stored on a server");
@@ -66,7 +69,7 @@ public class UploaderService {
     }
 
 
-    private String generateNameForFileOnServer () {
+    public String generateNameForFileOnServer() {
         int leftLimit = 48;
         int rightLimit = 122;
         int targetStringLength = 10;

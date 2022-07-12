@@ -14,7 +14,7 @@ public class FileProcessingService {
 
     public ResponseEntity<String> countMaxValueInColumn(String fileName, String columnName) {
         try {
-            FileContent file = Storage.files.get(fileName);
+            FileContent file = getFileContent(fileName);
             int index = file.getHeaders().indexOf(columnName);
             double max =
                     getStreamOfNumbersInColumn(file, index)
@@ -23,6 +23,10 @@ public class FileProcessingService {
             return ResponseEntity
                     .status(HttpStatus.OK)
                     .body(String.valueOf(max));
+        } catch (NumberFormatException exception) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body("Column: " + columnName + " contains NaN values");
         } catch (NoSuchElementException exception) {
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
@@ -32,23 +36,24 @@ public class FileProcessingService {
 
     public ResponseEntity<String> countSumOfColumn(String fileName, String columnName) {
         try {
-            FileContent file = Storage.files.get(fileName);
+            FileContent file = getFileContent(fileName);
             int index = file.getHeaders().indexOf(columnName);
-            double sum =
-                    getStreamOfNumbersInColumn(file, index)
-                            .sum();
+            double sum = getStreamOfNumbersInColumn(file, index).sum();
             return ResponseEntity
                     .status(HttpStatus.OK)
                     .body(String.valueOf(sum));
-
-        } catch (NoSuchElementException exception) {
+        } catch (NumberFormatException exception) {
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
-                    .body("Could not count sum of column: " + columnName);
+                    .body("Column: " + columnName + " contains NaN values");
         }
     }
 
-    private DoubleStream getStreamOfNumbersInColumn(FileContent fileContent, int index) {
+    public FileContent getFileContent(String fileName) {
+        return Storage.files.get(fileName);
+    }
+
+    public DoubleStream getStreamOfNumbersInColumn(FileContent fileContent, int index) {
         return fileContent.getContent().stream()
                 .filter(row -> !(row.get(index) == null || row.get(index).isEmpty()))
                 .mapToDouble(row -> Double.parseDouble(row.get(index)));
